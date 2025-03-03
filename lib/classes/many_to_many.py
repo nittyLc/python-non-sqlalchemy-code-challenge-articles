@@ -36,3 +36,4 @@ class Magazine:
 
     def contributing_authors(self):
         pass
+
