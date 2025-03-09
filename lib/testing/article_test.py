@@ -1,61 +1,65 @@
-class Article:
-    all = []
+import unittest
+from lib.debug import Author, Article, Magazine
 
-    def __init__(self, author, magazine, title):
-        if not isinstance(title, str) or not (5 <= len(title) <= 50):
-            raise ValueError("Title must be a string between 5 and 50 characters.")
-        self._title = title
-        self.author = author
-        self.magazine = magazine
-        Article.all.append(self)
+class TestArticle(unittest.TestCase):
+    def setUp(self):
+        self.author = Author("John Doe")
+        self.magazine = Magazine("Tech Monthly", "Technology")
+        self.article = Article(self.author, self.magazine, "The Future of AI")
 
-    @property
-    def title(self):
-        return self._title
+    def test_article_creation(self):
+        self.assertEqual(self.article.title, "The Future of AI")
+        self.assertEqual(self.article.author, self.author)
+        self.assertEqual(self.article.magazine, self.magazine)
 
-    @title.setter
-    def title(self, value):
-        raise AttributeError("Title is immutable")
+    def test_article_title_immutable(self):
+        with self.assertRaises(AttributeError):
+            self.article.title = "New Title"
 
-class Author:
-    def __init__(self, name):
-        self.name = name
-        self._articles = []
+class TestAuthor(unittest.TestCase):
+    def setUp(self):
+        self.author = Author("John Doe")
+        self.magazine = Magazine("Tech Monthly", "Technology")
 
-    def articles(self):
-        return self._articles
+    def test_author_creation(self):
+        self.assertEqual(self.author.name, "John Doe")
 
-    def magazines(self):
-        return list(set(article.magazine for article in self._articles))
+    def test_add_article(self):
+        article = self.author.add_article(self.magazine, "The Future of AI")
+        self.assertIn(article, self.author.articles())
+        self.assertIn(article, self.magazine.articles())
 
-    def add_article(self, magazine, title):
-        article = Article(self, magazine, title)
-        self._articles.append(article)
-        magazine._articles.append(article)
+    def test_magazines(self):
+        self.author.add_article(self.magazine, "The Future of AI")
+        self.assertIn(self.magazine, self.author.magazines())
 
-    def topic_areas(self):
-        return list(set(magazine.category for magazine in self.magazines()))
+    def test_topic_areas(self):
+        self.author.add_article(self.magazine, "The Future of AI")
+        self.assertIn("Technology", self.author.topic_areas())
 
-class Magazine:
-    def __init__(self, name, category):
-        self.name = name
-        self.category = category
-        self._articles = []
+class TestMagazine(unittest.TestCase):
+    def setUp(self):
+        self.author = Author("John Doe")
+        self.magazine = Magazine("Tech Monthly", "Technology")
+        self.article = Article(self.author, self.magazine, "The Future of AI")
+        self.magazine._articles.append(self.article)
 
-    def articles(self):
-        return self._articles
+    def test_magazine_creation(self):
+        self.assertEqual(self.magazine.name, "Tech Monthly")
+        self.assertEqual(self.magazine.category, "Technology")
 
-    def contributors(self):
-        return list(set(article.author for article in self._articles))
+    def test_articles(self):
+        self.assertIn(self.article, self.magazine.articles())
 
-    def article_titles(self):
-        return [article.title for article in self._articles]
+    def test_contributors(self):
+        self.assertIn(self.author, self.magazine.contributors())
 
-    def contributing_authors(self):
-        author_count = {}
-        for article in self._articles:
-            if article.author in author_count:
-                author_count[article.author] += 1
-            else:
-                author_count[article.author] = 1
-        return [author for author, count in author_count.items() if count > 1]
+    def test_article_titles(self):
+        self.assertIn("The Future of AI", self.magazine.article_titles())
+
+    def test_contributing_authors(self):
+        self.magazine._articles.append(Article(self.author, self.magazine, "AI in 2025"))
+        self.assertIn(self.author, self.magazine.contributing_authors())
+
+if __name__ == '__main__':
+    unittest.main()
